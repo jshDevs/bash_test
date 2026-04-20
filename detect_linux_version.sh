@@ -20,14 +20,27 @@ check_linux() {
 
 # ─── Distribución ──────────────────────────────────────────
 get_distro() {
+  DISTRO_NAME="Desconocido"
+  DISTRO_VERSION="N/A"
+  DISTRO_ID="unknown"
+  DISTRO_PRETTY="Desconocido"
+  DISTRO_CODENAME="N/A"
+
   if [[ -f /etc/os-release ]]; then
-    # shellcheck source=/dev/null
-    source /etc/os-release
-    DISTRO_NAME="${NAME:-Desconocido}"
-    DISTRO_VERSION="${VERSION_ID:-N/A}"
-    DISTRO_ID="${ID:-unknown}"
-    DISTRO_PRETTY="${PRETTY_NAME:-${NAME}}"
-    DISTRO_CODENAME="${VERSION_CODENAME:-${UBUNTU_CODENAME:-N/A}}"
+    # Parseo manual: evita SC1091 (can't follow source)
+    DISTRO_NAME=$(     grep '^NAME='              /etc/os-release | cut -d= -f2- | tr -d '"')
+    DISTRO_VERSION=$(  grep '^VERSION_ID='        /etc/os-release | cut -d= -f2- | tr -d '"')
+    DISTRO_ID=$(       grep '^ID='                /etc/os-release | cut -d= -f2- | tr -d '"')
+    DISTRO_PRETTY=$(   grep '^PRETTY_NAME='       /etc/os-release | cut -d= -f2- | tr -d '"')
+    DISTRO_CODENAME=$( grep '^VERSION_CODENAME='  /etc/os-release | cut -d= -f2- | tr -d '"')
+    if [[ -z "$DISTRO_CODENAME" ]]; then
+      DISTRO_CODENAME=$(grep '^UBUNTU_CODENAME=' /etc/os-release | cut -d= -f2- | tr -d '"')
+    fi
+    DISTRO_NAME=${DISTRO_NAME:-"Desconocido"}
+    DISTRO_VERSION=${DISTRO_VERSION:-"N/A"}
+    DISTRO_ID=${DISTRO_ID:-"unknown"}
+    DISTRO_PRETTY=${DISTRO_PRETTY:-"$DISTRO_NAME"}
+    DISTRO_CODENAME=${DISTRO_CODENAME:-"N/A"}
   elif command -v lsb_release &>/dev/null; then
     DISTRO_NAME=$(lsb_release -si)
     DISTRO_VERSION=$(lsb_release -sr)
@@ -36,16 +49,16 @@ get_distro() {
     DISTRO_CODENAME=$(lsb_release -sc)
   elif [[ -f /etc/redhat-release ]]; then
     DISTRO_PRETTY=$(cat /etc/redhat-release)
-    DISTRO_NAME="${DISTRO_PRETTY}"
+    DISTRO_NAME="$DISTRO_PRETTY"
     DISTRO_VERSION="N/A"; DISTRO_ID="rhel"; DISTRO_CODENAME="N/A"
   elif [[ -f /etc/debian_version ]]; then
-    DISTRO_NAME="Debian"
     DISTRO_VERSION=$(cat /etc/debian_version)
-    DISTRO_ID="debian"; DISTRO_PRETTY="Debian ${DISTRO_VERSION}"; DISTRO_CODENAME="N/A"
+    DISTRO_NAME="Debian"
+    DISTRO_ID="debian"
+    DISTRO_PRETTY="Debian ${DISTRO_VERSION}"
+    DISTRO_CODENAME="N/A"
   else
     warn "No se pudo detectar la distribución."
-    DISTRO_NAME="Desconocido"; DISTRO_VERSION="N/A"
-    DISTRO_ID="unknown"; DISTRO_PRETTY="Desconocido"; DISTRO_CODENAME="N/A"
   fi
 }
 
@@ -53,7 +66,7 @@ get_distro() {
 get_kernel() {
   KERNEL_VERSION=$(uname -r)
   KERNEL_ARCH=$(uname -m)
-  KERNEL_FULL=$(uname -a)
+  # KERNEL_FULL removido: SC2034 variable asignada pero no usada
 }
 
 # ─── Info extra ────────────────────────────────────────────
@@ -79,12 +92,12 @@ get_family() {
 
 # ─── Gestor de paquetes ────────────────────────────────────
 get_pkg_manager() {
+  PKG_MANAGER="No detectado"
   for pm in apt dnf yum pacman zypper apk brew; do
     if command -v "$pm" &>/dev/null; then
       PKG_MANAGER="$pm"; return
     fi
   done
-  PKG_MANAGER="No detectado"
 }
 
 # ─── Output ────────────────────────────────────────────────
