@@ -7,8 +7,10 @@ on:
     branches: ["main"]
 
 jobs:
+
+  # ────────────────────────────────────────────────────────────
   lint:
-    name: 🔍 Lint (shellcheck)
+    name: \ud83d\udd0d Lint (shellcheck)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,14 +18,26 @@ jobs:
       - name: Install shellcheck
         run: sudo apt-get install -y shellcheck
 
-      - name: Lint detect_linux_version.sh
-        run: shellcheck -S warning detect_linux_version.sh
+      - name: Lint todos los scripts principales
+        run: |
+          shellcheck -S warning detect_linux_version.sh
+          shellcheck -S warning detect_linux_version_v3.sh
 
-      - name: Lint test_detect.sh
-        run: shellcheck -S warning test_detect.sh
+      - name: Lint todos los tests
+        run: |
+          shellcheck -S warning test_detect.sh
+          shellcheck -S warning test_v1.sh
+          shellcheck -S warning test_v2.sh
+          shellcheck -S warning test_v3.sh
 
+      - name: Lint v1 y v2 (info only, usan source)
+        run: |
+          shellcheck -S info detect_linux_version_v1.sh || true
+          shellcheck -S info detect_linux_version_v2.sh || true
+
+  # ────────────────────────────────────────────────────────────
   test:
-    name: 🧪 Tests
+    name: \ud83e\uddea Tests (script principal)
     needs: lint
     strategy:
       matrix:
@@ -32,17 +46,42 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Permisos de ejecución
+      - name: Permisos
         run: chmod +x detect_linux_version.sh test_detect.sh
 
-      - name: Ejecutar script
+      - name: Ejecutar script principal
         run: ./detect_linux_version.sh
 
-      - name: Ejecutar tests
+      - name: Ejecutar test suite principal
         run: ./test_detect.sh
 
+  # ────────────────────────────────────────────────────────────
+  test-versiones:
+    name: \ud83e\uddea Tests versiones manuales (v1/v2/v3)
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Permisos
+        run: |
+          chmod +x detect_linux_version_v1.sh
+          chmod +x detect_linux_version_v2.sh
+          chmod +x detect_linux_version_v3.sh
+          chmod +x test_v1.sh test_v2.sh test_v3.sh
+
+      - name: Tests v1
+        run: ./test_v1.sh
+
+      - name: Tests v2
+        run: ./test_v2.sh
+
+      - name: Tests v3
+        run: ./test_v3.sh
+
+  # ────────────────────────────────────────────────────────────
   test-docker:
-    name: 🐳 Test en distros adicionales
+    name: \ud83d\udc33 Tests Docker multi-distro (script principal)
     needs: lint
     runs-on: ubuntu-latest
     strategy:
