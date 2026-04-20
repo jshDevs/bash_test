@@ -16,37 +16,76 @@ assert() {
 echo -e "\n🧪 Ejecutando tests para detect_linux_version.sh\n"
 
 # T1: Script existe y es ejecutable
-[[ -f "$SCRIPT" ]] && [[ -x "$SCRIPT" ]]; assert "Script existe y es ejecutable" $?
+if [[ -f "$SCRIPT" ]] && [[ -x "$SCRIPT" ]]; then
+  assert "Script existe y es ejecutable" 0
+else
+  assert "Script existe y es ejecutable" 1
+fi
 
 # T2: Termina con exit 0 en Linux
-"$SCRIPT" > /dev/null 2>&1; assert "Exit 0 en Linux" $?
+if "$SCRIPT" > /dev/null 2>&1; then
+  assert "Exit 0 en Linux" 0
+else
+  assert "Exit 0 en Linux" 1
+fi
 
 # T3: Output contiene 'Distribución'
-"$SCRIPT" 2>/dev/null | grep -q "Distribución"; assert "Muestra campo Distribución" $?
+if "$SCRIPT" 2>/dev/null | grep -q "Distribución"; then
+  assert "Muestra campo Distribución" 0
+else
+  assert "Muestra campo Distribución" 1
+fi
 
 # T4: Output contiene 'Kernel'
-"$SCRIPT" 2>/dev/null | grep -q "Kernel"; assert "Muestra info de Kernel" $?
+if "$SCRIPT" 2>/dev/null | grep -q "Kernel"; then
+  assert "Muestra info de Kernel" 0
+else
+  assert "Muestra info de Kernel" 1
+fi
 
 # T5: Output contiene 'Arquitectura'
-"$SCRIPT" 2>/dev/null | grep -q "Arquitectura"; assert "Muestra arquitectura" $?
+if "$SCRIPT" 2>/dev/null | grep -q "Arquitectura"; then
+  assert "Muestra arquitectura" 0
+else
+  assert "Muestra arquitectura" 1
+fi
 
 # T6: /etc/os-release o fallback disponible
-[[ -f /etc/os-release ]] || command -v lsb_release &>/dev/null || \
-  [[ -f /etc/redhat-release ]] || [[ -f /etc/debian_version ]]
-assert "Fuente de distro disponible" $?
+if [[ -f /etc/os-release ]] || command -v lsb_release &>/dev/null || \
+   [[ -f /etc/redhat-release ]] || [[ -f /etc/debian_version ]]; then
+  assert "Fuente de distro disponible" 0
+else
+  assert "Fuente de distro disponible" 1
+fi
 
 # T7: uname disponible
-command -v uname &>/dev/null; assert "uname disponible" $?
+if command -v uname &>/dev/null; then
+  assert "uname disponible" 0
+else
+  assert "uname disponible" 1
+fi
 
-# T8: Output no contiene 'Desconocido' en Distribución
-! "$SCRIPT" 2>/dev/null | grep "Distribución" | grep -q "Desconocido"
-assert "Distribución identificada (no Desconocido)" $?
+# T8: Distribución identificada (no Desconocido)
+if "$SCRIPT" 2>/dev/null | grep "Distribución" | grep -q "Desconocido"; then
+  assert "Distribución identificada (no Desconocido)" 1
+else
+  assert "Distribución identificada (no Desconocido)" 0
+fi
 
 # T9: Hostname no vacío
-[[ -n "$(hostname)" ]]; assert "Hostname no vacío" $?
+HOST_VAL=$(hostname)
+if [[ -n "$HOST_VAL" ]]; then
+  assert "Hostname no vacío" 0
+else
+  assert "Hostname no vacío" 1
+fi
 
 # T10: /proc/cpuinfo legible
-[[ -r /proc/cpuinfo ]]; assert "/proc/cpuinfo legible" $?
+if [[ -r /proc/cpuinfo ]]; then
+  assert "/proc/cpuinfo legible" 0
+else
+  assert "/proc/cpuinfo legible" 1
+fi
 
 echo ""
 echo "────────────────────────────────"
