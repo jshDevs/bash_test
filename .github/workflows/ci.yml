@@ -1,0 +1,60 @@
+name: CI — Linux Version Detector
+
+on:
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  lint:
+    name: 🔍 Lint (shellcheck)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Lint detect_linux_version.sh
+        run: shellcheck -S warning detect_linux_version.sh
+
+      - name: Lint test_detect.sh
+        run: shellcheck -S warning test_detect.sh
+
+  test:
+    name: 🧪 Tests
+    needs: lint
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Permisos de ejecución
+        run: chmod +x detect_linux_version.sh test_detect.sh
+
+      - name: Ejecutar script
+        run: ./detect_linux_version.sh
+
+      - name: Ejecutar tests
+        run: ./test_detect.sh
+
+  test-docker:
+    name: 🐳 Test en distros adicionales
+    needs: lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image: ["debian:bookworm", "fedora:latest", "alpine:latest"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test en ${{ matrix.image }}
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            ${{ matrix.image }} \
+            sh -c "chmod +x detect_linux_version.sh && ./detect_linux_version.sh"
